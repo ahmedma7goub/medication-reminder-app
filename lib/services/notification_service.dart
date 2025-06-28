@@ -64,7 +64,8 @@ class NotificationService {
 
       // We rely on permission_handler to request POST_NOTIFICATIONS at runtime (see main.dart).
     }
-    // Handle notification action buttons
+
+  // Handle notification action buttons
   Future<void> _handleNotificationResponse(NotificationResponse response) async {
     try {
       final payload = response.payload;
@@ -83,7 +84,7 @@ class NotificationService {
           break;
         case 'SNOOZE':
           // Schedule a one-off notification 10 minutes later
-          final int newId = response.id + 900000; // ensure uniqueness
+          final int newId = (response.id ?? 0) + 900000; // ensure uniqueness
           final tz.TZDateTime snoozeTime = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 10));
           await flutterLocalNotificationsPlugin.zonedSchedule(
             newId,
