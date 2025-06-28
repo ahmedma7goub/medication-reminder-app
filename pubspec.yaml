@@ -1,0 +1,33 @@
+name: medication_reminder
+description: A new Flutter project to remind users to take their medicine.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.1 # Required for localization
+  
+  # Core packages for our app
+  flutter_local_notifications: ^15.1.1 # For scheduling notifications
+  sqflite: ^2.3.0 # For local database storage
+  path_provider: ^2.1.1 # To find the correct path for the database
+
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true # Enables internationalization support
