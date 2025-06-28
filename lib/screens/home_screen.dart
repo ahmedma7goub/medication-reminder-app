@@ -1,104 +1,217 @@
 import 'package:flutter/material.dart';
-import 'package:medication_reminder/services/notification_service.dart';
-import '../helpers/database_helper.dart';
-import '../models/medicine.dart';
-import 'add_edit_medicine_screen.dart';
+import 'package:medication_reminder/helpers/database_helper.dart';
+import 'package:medication_reminder/models/dose_history.dart';
+import 'package:medication_reminder/models/medicine.dart';
+import 'package:medication_reminder/screens/add_edit_medicine_screen.dart';
+import 'package:intl/intl.dart' as intl;
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Medicine>> _medicineList;
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  List<Medicine> _todaysMedicines = [];
+  Map<int, int> _takenDosesCount = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _updateMedicineList();
+    _refreshData();
   }
 
-  void _updateMedicineList() {
+  Future<void> _refreshData() async {
+    if (!mounted) return;
     setState(() {
-      _medicineList = _dbHelper.getMedicines();
+      _isLoading = true;
     });
+
+    final allMedicines = await DatabaseHelper().getMedicines();
+    final today = DateTime.now();
+    final todaysMeds = allMedicines.where((med) {
+      // This logic can be expanded to handle 'specific_days'
+      return med.scheduleType == 'daily';
+    }).toList();
+
+    final takenCounts = <int, int>{};
+    for (var med in todaysMeds) {
+      final doses = await DatabaseHelper().getDosesForDay(med.id!, today);
+      takenCounts[med.id!] = doses.length;
+    }
+
+    if (mounted) {
+      setState(() {
+        _todaysMedicines = todaysMeds;
+        _takenDosesCount = takenCounts;
+        _isLoading = false;
+      });
+    }
+  }
+
+  int get _totalDosesToday {
+    return _todaysMedicines.fold(0, (sum, med) => sum + med.times.length);
+  }
+
+  int get _totalDosesTaken {
+    return _takenDosesCount.values.fold(0, (sum, count) => sum + count);
+  }
+
+  double get _progress {
+    if (_totalDosesToday == 0) return 0.0;
+    return _totalDosesTaken / _totalDosesToday;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تذكيراتي بالأدوية'),
+        title: const Text('الرئيسية'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
-      body: FutureBuilder<List<Medicine>>(
-        future: _medicineList,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text(
-                'لم تتم إضافة أي أدوية بعد.\nاضغط على زر + للبدء.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  _buildProgressCard(context),
+                  const SizedBox(height: 24),
+                  _buildActionButtons(context),
+                  const SizedBox(height: 24),
+                  _buildTodaysMedicinesList(context),
+                ],
               ),
-            );
-          }
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              Medicine medicine = snapshot.data![index];
-              return Card(
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: Text(medicine.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('الجرعة: ${medicine.dosage}\nالوقت: ${medicine.times.join(', ')}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async {
-                      // Show a confirmation dialog before deleting
-                      bool? deleted = await showDialog<bool>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('تأكيد الحذف'),
-                            content: const Text('هل أنت متأكد من رغبتك في حذف هذا الدواء؟'),
-                            actions: <Widget>[
-                              TextButton(
-                                child: const Text('إلغاء'),
-                                onPressed: () => Navigator.of(context).pop(false),
-                              ),
-                              TextButton(
-                                child: const Text('حذف', style: TextStyle(color: Colors.red)),
-                                onPressed: () async {
-                                  await NotificationService().cancelNotification(medicine.id!); // Cancel notification
-                                  Navigator.of(context).pop(true);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
+            ),
+    );
+  }
 
-                      if (deleted == true) {
-                        await _dbHelper.deleteMedicine(medicine.id!);
-                        _updateMedicineList();
-                      }
-                    },
+  Widget _buildProgressCard(BuildContext context) {
+    final onPrimaryColor = Theme.of(context).colorScheme.onPrimary;
+    return Card(
+      color: Theme.of(context).colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('مرحباً أحمد', style: TextStyle(color: onPrimaryColor, fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('اليوم لديك $_totalDosesToday أدوية', style: TextStyle(color: onPrimaryColor.withOpacity(0.9), fontSize: 16)),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Text('تقدم اليوم', style: TextStyle(color: onPrimaryColor.withOpacity(0.9)))),
+                Text('${(_progress * 100).toInt()}%', style: TextStyle(color: onPrimaryColor, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: onPrimaryColor.withOpacity(0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(onPrimaryColor),
+              minHeight: 8,
+            ),
+            const SizedBox(height: 8),
+            Text('تم تناول $_totalDosesTaken من $_totalDosesToday أدوية', style: TextStyle(color: onPrimaryColor.withOpacity(0.9))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.calendar_today),
+            label: const Text('التقويم'),
+            onPressed: () { /* Navigate to Calendar Screen */ },
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('إضافة دواء'),
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const AddEditMedicineScreen()),
+              );
+              _refreshData();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTodaysMedicinesList(BuildContext context) {
+    final String today = intl.DateFormat('EEEE, d MMMM', 'ar').format(DateTime.now());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('أدوية اليوم', style: Theme.of(context).textTheme.headlineSmall),
+        Text(today, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
+        const SizedBox(height: 16),
+        if (_todaysMedicines.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text('لا توجد أدوية مجدولة لليوم.', textAlign: TextAlign.center),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _todaysMedicines.length,
+            itemBuilder: (context, index) {
+              final medicine = _todaysMedicines[index];
+              final takenCount = _takenDosesCount[medicine.id!] ?? 0;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(medicine.name, style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 4),
+                      Text('${medicine.dosage} - ${medicine.type}', style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      ...medicine.times.map((time) {
+                        final isTimeSlotTaken = medicine.times.indexOf(time) < takenCount;
+                        return ListTile(
+                          leading: Icon(
+                            isTimeSlotTaken ? Icons.check_circle : Icons.alarm,
+                            color: isTimeSlotTaken ? Colors.green : Colors.orange,
+                          ),
+                          title: Text('الوقت: $time'),
+                          trailing: ElevatedButton(
+                            onPressed: isTimeSlotTaken
+                                ? null
+                                : () async {
+                                    await DatabaseHelper().addDoseRecord(
+                                      DoseHistory(medicineId: medicine.id!, takenAt: DateTime.now()),
+                                    );
+                                    _refreshData();
+                                  },
+                            child: const Text('تناول'),
+                          ),
+                        );
+                      }).toList(),
+                    ],
                   ),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddEditMedicineScreen(medicine: medicine),
-                      ),
-                    );
-                    _updateMedicineList();
                   },
                 ),
               );

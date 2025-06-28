@@ -2,6 +2,8 @@ class Medicine {
   int? id;
   String name;
   String dosage;
+  String type; // e.g., Pill, Syrup, Injection
+  int stock; // Number of pills/doses remaining
   String scheduleType; // e.g., 'daily', 'specific_days'
   List<String>? days; // e.g., ['Monday', 'Wednesday']
   List<String> times; // e.g., ['08:00', '20:00']
@@ -10,6 +12,8 @@ class Medicine {
     this.id,
     required this.name,
     required this.dosage,
+    required this.type,
+    required this.stock,
     required this.scheduleType,
     this.days,
     required this.times,
@@ -21,9 +25,11 @@ class Medicine {
       'id': id,
       'name': name,
       'dosage': dosage,
+      'type': type,
+      'stock': stock,
       'scheduleType': scheduleType,
-      'days': days?.join(','), // Store list as comma-separated string
-      'times': times.join(','), // Store list as comma-separated string
+      'days': days?.join(','),
+      'times': times.join(','),
     };
   }
 
@@ -33,9 +39,11 @@ class Medicine {
       id: map['id'],
       name: map['name'],
       dosage: map['dosage'],
+      type: map['type'],
+      stock: map['stock'],
       scheduleType: map['scheduleType'],
-      days: map['days']?.split(','),
-      times: map['times'].split(','),
+      days: map['days'] != null ? (map['days'] as String).split(',') : null,
+      times: (map['times'] as String).split(','),
     );
   }
 }
