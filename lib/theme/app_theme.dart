@@ -1,68 +1,81 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static final Color _lightPrimaryColor = Colors.teal;
-  static final Color _darkPrimaryColor = Colors.tealAccent;
+  AppTheme._();
+
+  static const Color _darkPrimaryColor = Color(0xFF4DB6AC); // A softer teal
+  static const Color _darkAccentColor = Color(0xFF69F0AE); // A vibrant green
+  static const Color _darkBackgroundColor = Color(0xFF1A1C1E);
+  static const Color _darkCardColor = Color(0xFF25282D);
+  static const Color _darkTextColor = Color(0xFFE3E3E3);
+  static const Color _darkSecondaryTextColor = Color(0xFFA9B4BE);
 
   static final ThemeData lightTheme = ThemeData(
-    primaryColor: _lightPrimaryColor,
-    scaffoldBackgroundColor: Colors.grey[100],
-    appBarTheme: AppBarTheme(
-      color: _lightPrimaryColor,
-      elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white),
-      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
-    ),
-    colorScheme: ColorScheme.light(
-      primary: _lightPrimaryColor,
-      secondary: Colors.tealAccent,
+    brightness: Brightness.light,
+    primaryColor: const Color(0xFF00897B),
+    scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+    fontFamily: 'Cairo',
+    colorScheme: const ColorScheme.light(
+      primary: Color(0xFF00897B), // Teal
+      secondary: Color(0xFF00BFA5), // Teal Accent
+      surface: Colors.white,
+      background: Color(0xFFF5F5F5),
       onPrimary: Colors.white,
-      background: Colors.grey[100]!,
+      onSecondary: Colors.black,
+      onSurface: Colors.black,
+      onBackground: Colors.black,
+      error: Colors.redAccent,
     ),
     cardTheme: CardTheme(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _lightPrimaryColor,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      ),
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 22.0, color: Colors.black87),
+      bodyLarge: TextStyle(fontSize: 16.0, color: Colors.black87),
+      bodyMedium: TextStyle(fontSize: 14.0, color: Colors.black54),
     ),
-    fontFamily: 'Cairo',
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Colors.white,
+      selectedItemColor: Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+    ),
   );
 
   static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
     primaryColor: _darkPrimaryColor,
-    scaffoldBackgroundColor: const Color(0xFF121212),
-    appBarTheme: AppBarTheme(
-      color: const Color(0xFF1F1F1F),
-      elevation: 0,
-      iconTheme: IconThemeData(color: _darkPrimaryColor),
-      titleTextStyle: TextStyle(color: _darkPrimaryColor, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
-    ),
-    colorScheme: ColorScheme.dark(
+    scaffoldBackgroundColor: _darkBackgroundColor,
+    fontFamily: 'Cairo',
+    colorScheme: const ColorScheme.dark(
       primary: _darkPrimaryColor,
-      secondary: Colors.teal,
+      secondary: _darkAccentColor,
+      surface: _darkCardColor,
+      background: _darkBackgroundColor,
       onPrimary: Colors.black,
-      background: const Color(0xFF121212),
-      surface: const Color(0xFF1F1F1F),
+      onSecondary: Colors.black,
+      onSurface: _darkTextColor,
+      onBackground: _darkTextColor,
+      error: Colors.redAccent,
     ),
     cardTheme: CardTheme(
-      color: const Color(0xFF1F1F1F),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: _darkCardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _darkPrimaryColor,
-        foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      ),
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 22.0, color: _darkTextColor),
+      bodyLarge: TextStyle(fontSize: 16.0, color: _darkTextColor),
+      bodyMedium: TextStyle(fontSize: 14.0, color: _darkSecondaryTextColor),
     ),
-    fontFamily: 'Cairo',
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: _darkCardColor, 
+      selectedItemColor: _darkPrimaryColor,
+      unselectedItemColor: _darkSecondaryTextColor,
+      type: BottomNavigationBarType.fixed,
+      showUnselectedLabels: true,
+    ),
   );
 }
