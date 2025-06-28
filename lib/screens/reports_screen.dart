@@ -1,194 +1,132 @@
 import 'package:flutter/material.dart';
-import 'package:medication_reminder/helpers/database_helper.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart' as intl;
 
-class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({Key? key}) : super(key: key);
-
-  @override
-  _ReportsScreenState createState() => _ReportsScreenState();
-}
-
-class _ReportsScreenState extends State<ReportsScreen> {
-  late Future<Map<DateTime, int>> _adherenceFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshAdherence();
-  }
-
-  void _refreshAdherence() {
-    if (!mounted) return;
-    setState(() {
-      _adherenceFuture = DatabaseHelper().getAdherenceForLastWeek();
-    });
-  }
+class ReportsScreen extends StatelessWidget {
+  const ReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Dummy data for demonstration
+    final double overallAdherence = 0.85; // 85%
+    final List<Map<String, String>> history = [
+      {'medicine': 'بانادول', 'time': '8:00 ص', 'status': 'taken'},
+      {'medicine': 'فيتامين د', 'time': '1:00 م', 'status': 'missed'},
+      {'medicine': 'مضاد حيوي', 'time': '8:00 م', 'status': 'taken'},
+      {'medicine': 'بانادول', 'time': 'أمس، 8:00 ص', 'status': 'taken'},
+      {'medicine': 'فيتامين د', 'time': 'أمس، 1:00 م', 'status': 'taken'},
+    ];
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('التقارير'),
-        centerTitle: true,
+        title: Text('التقارير', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: false,
         automaticallyImplyLeading: false,
       ),
-      body: FutureBuilder<Map<DateTime, int>>(
-        future: _adherenceFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('لا توجد بيانات لعرضها.', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)));
-          }
-
-          final adherenceData = snapshot.data!;
-          final overallAdherence = adherenceData.isNotEmpty
-              ? (adherenceData.values.reduce((a, b) => a + b) / (adherenceData.length * 100)) * 100
-              : 0.0;
-
-          return RefreshIndicator(
-            onRefresh: () async => _refreshAdherence(),
-            child: ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                _buildOverallAdherenceCard(context, overallAdherence),
-                const SizedBox(height: 24),
-                _buildWeeklyAdherenceChart(context, adherenceData),
-              ],
-            ),
-          );
-        },
+      body: ListView(
+        padding: const EdgeInsets.all(20.0),
+        children: [
+          _buildAdherenceCard(theme, overallAdherence),
+          const SizedBox(height: 24),
+          _buildHistoryList(theme, history),
+        ],
       ),
     );
   }
 
-  Widget _buildOverallAdherenceCard(BuildContext context, double adherence) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildAdherenceCard(ThemeData theme, double adherence) {
     return Card(
-      color: colorScheme.secondary,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: theme.cardTheme.color,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          children: [
-            Text('معدل الالتزام الكلي', style: TextStyle(color: colorScheme.onSecondary, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: CircularProgressIndicator(
-                    value: adherence / 100,
-                    strokeWidth: 10,
-                    backgroundColor: colorScheme.onSecondary.withOpacity(0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onSecondary),
-                  ),
-                ),
-                Text('${adherence.toStringAsFixed(0)}%', style: TextStyle(color: colorScheme.onSecondary, fontSize: 28, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWeeklyAdherenceChart(BuildContext context, Map<DateTime, int> data) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'الالتزام الأسبوعي',
-              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              'الالتزام الإجمالي',
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: 100,
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        return BarTooltipItem(
-                          '${rod.toY.round()}%',
-                          TextStyle(color: colorScheme.onSecondary, fontWeight: FontWeight.bold),
-                        );
-                      },
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: adherence,
+                      minHeight: 12,
+                      backgroundColor: theme.colorScheme.surfaceVariant,
+                      valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
                     ),
                   ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (double value, TitleMeta meta) {
-                          final day = data.keys.elementAt(value.toInt());
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            child: Text(intl.DateFormat('E', 'ar').format(day), style: textTheme.bodySmall),
-                          );
-                        },
-                        reservedSize: 30,
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: textTheme.bodySmall),
-                        reservedSize: 40,
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: 25,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: textTheme.bodySmall!.color!.withOpacity(0.2),
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
-                  barGroups: data.entries.toList().asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final value = entry.value.value;
-                    return BarChartGroupData(
-                      x: index,
-                      barRods: [
-                        BarChartRodData(
-                          toY: value.toDouble(),
-                          color: colorScheme.primary,
-                          width: 16,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(4),
-                            topRight: Radius.circular(4),
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
                 ),
-              ),
+                const SizedBox(width: 16),
+                Text(
+                  '${(adherence * 100).toStringAsFixed(0)}%',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'معدل رائع! استمر في الالتزام بمواعيد دوائك.',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHistoryList(ThemeData theme, List<Map<String, String>> history) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'سجل الأدوية',
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: theme.cardTheme.color,
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: history.length,
+            itemBuilder: (context, index) {
+              final item = history[index];
+              final isTaken = item['status'] == 'taken';
+              return ListTile(
+                leading: Icon(
+                  isTaken ? Icons.check_circle_outline : Icons.highlight_off_outlined,
+                  color: isTaken ? Colors.green.shade400 : Colors.red.shade400,
+                  size: 28,
+                ),
+                title: Text(item['medicine']!, style: const TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: Text(item['time']!),
+                trailing: Text(
+                  isTaken ? 'تم أخذها' : 'تم تفويتها',
+                  style: TextStyle(
+                    color: isTaken ? Colors.green.shade400 : Colors.red.shade400,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (context, index) => const Divider(height: 1, indent: 20, endIndent: 20),
+          ),
+        ),
+      ],
     );
   }
 }
