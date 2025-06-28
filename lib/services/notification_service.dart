@@ -64,6 +64,7 @@ class NotificationService {
 
       // We rely on permission_handler to request POST_NOTIFICATIONS at runtime (see main.dart).
     }
+  }
 
   // Handle notification action buttons
   Future<void> _handleNotificationResponse(NotificationResponse response) async {
