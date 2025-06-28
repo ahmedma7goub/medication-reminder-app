@@ -6,6 +6,7 @@ import 'package:medication_reminder/screens/main_navigation_screen.dart';
 import 'package:medication_reminder/services/notification_service.dart';
 import 'package:medication_reminder/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   // Ensure that plugin services are initialized
@@ -13,7 +14,14 @@ void main() async {
   // Initialize notification service
   await NotificationService().init();
   await DatabaseHelper().database; // Ensure database is initialized
+  await _requestPermissions();
   runApp(const MyApp());
+}
+
+Future<void> _requestPermissions() async {
+  if (await Permission.notification.isDenied) {
+    await Permission.notification.request();
+  }
 }
 
 class MyApp extends StatelessWidget {

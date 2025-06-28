@@ -23,6 +23,7 @@ dependencies:
   fl_chart: ^0.68.0 # For charts and reports for the database
   provider: ^6.1.2
   shared_preferences: ^2.2.3
+  permission_handler: ^11.0.1 # For handling permissions
 
   cupertino_icons: ^1.0.2
 
