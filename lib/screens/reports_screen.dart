@@ -120,7 +120,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   maxY: 100,
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      tooltipBackgroundColor: Colors.blueGrey,
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         return BarTooltipItem(
                           '${rod.toY.round()}%',
