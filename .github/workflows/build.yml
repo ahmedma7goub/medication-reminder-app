@@ -26,14 +26,23 @@ jobs:
         channel: 'stable'
         cache: true
 
+    - name: Recreate project structure
+      run: |
+        flutter create --project-name medication_reminder_app temp_app
+        rm -rf temp_app/lib
+        cp -r lib temp_app/
+        cp pubspec.yaml temp_app/pubspec.yaml
+
     - name: Install dependencies
+      working-directory: ./temp_app
       run: flutter pub get
 
     - name: Build APK
+      working-directory: ./temp_app
       run: flutter build apk --release
 
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: temp_app/build/app/outputs/flutter-apk/app-release.apk
