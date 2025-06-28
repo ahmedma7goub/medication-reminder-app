@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:medication_reminder/screens/home_screen.dart';
+import 'package:medication_reminder/screens/main_navigation_screen.dart';
 import 'package:medication_reminder/services/notification_service.dart';
 
 void main() async {
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.teal,
         ),
       ),
-      home: const HomeScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }

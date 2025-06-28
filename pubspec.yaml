@@ -18,7 +18,8 @@ dependencies:
   # Core packages for our app
   flutter_local_notifications: ^15.1.1 # For scheduling notifications
   sqflite: ^2.3.0 # For local database storage
-  path_provider: ^2.1.1 # To find the correct path for the database
+  path_provider: ^2.0.15 # For finding the database path
+  fl_chart: ^0.68.0 # For charts and reports for the database
 
   cupertino_icons: ^1.0.2
 
