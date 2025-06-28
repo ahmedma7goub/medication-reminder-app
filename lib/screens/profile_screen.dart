@@ -78,7 +78,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildOptionTile(BuildContext context, {required IconData icon, required String title, bool isDestructive = false, required VoidCallback onTap}) {
-    final color = isDestructive ? Colors.redAccent : Theme.of(context).textTheme.bodyText1?.color;
+    final color = isDestructive ? Colors.redAccent : Theme.of(context).textTheme.bodyLarge?.color;
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),

@@ -27,29 +27,23 @@ class MyApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             title: 'تذكير الدواء',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [
-              Locale('ar', 'EG'), // Arabic, Egypt
+              Locale('ar', ''), // Arabic, no country code
             ],
-            locale: const Locale('ar', 'EG'), // Set the default locale to Arabic
-            home: const MainNavigationScreen(),
+            locale: const Locale('ar'),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
             debugShowCheckedModeBanner: false,
+            home: const MainNavigationScreen(),
           );
         },
-          elevation: 0,
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.teal,
-        ),
       ),
-      home: const MainNavigationScreen(),
     );
   }
 }

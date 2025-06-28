@@ -212,24 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       }).toList(),
                     ],
                   ),
-                  },
                 ),
               );
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddEditMedicineScreen()),
-          );
-          _updateMedicineList();
-        },
-        tooltip: 'إضافة دواء جديد',
-        child: const Icon(Icons.add),
-      ),
+          ),
+      ],
     );
   }
 }

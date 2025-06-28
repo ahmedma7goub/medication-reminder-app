@@ -74,12 +74,21 @@ class _AddEditMedicineScreenState extends State<AddEditMedicineScreen> {
       }
 
       // Schedule notifications
-      await NotificationService().cancelNotification(newMedicine.id!);
-      for (var timeStr in newMedicine.times) {
+      if (widget.medicine != null) {
+        for (int i = 0; i < widget.medicine!.times.length; i++) {
+          final notificationId = widget.medicine!.id! * 1000 + i;
+          await NotificationService().cancelNotification(notificationId);
+        }
+      }
+
+      for (int i = 0; i < newMedicine.times.length; i++) {
+        final timeStr = newMedicine.times[i];
         final timeParts = timeStr.split(':');
         final time = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
+        final notificationId = newMedicine.id! * 1000 + i;
+
         await NotificationService().scheduleDailyNotification(
-          id: newMedicine.id!,
+          id: notificationId,
           title: 'تذكير بجرعة الدواء',
           body: 'حان الآن موعد تناول دواء ${newMedicine.name}',
           time: time,
@@ -195,7 +204,7 @@ class _AddEditMedicineScreenState extends State<AddEditMedicineScreen> {
                         });
                       },
                       style: TextButton.styleFrom(
-                        primary: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
@@ -208,7 +217,8 @@ class _AddEditMedicineScreenState extends State<AddEditMedicineScreen> {
               icon: const Icon(Icons.save_alt_outlined),
               label: const Text('حفظ'),
               style: ElevatedButton.styleFrom(
-                primary: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ],
