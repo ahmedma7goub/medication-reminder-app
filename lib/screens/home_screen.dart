@@ -134,30 +134,62 @@ class _HomeScreenState extends State<HomeScreen> {
         ElevatedButton(
           child: const Text('اختبار 30 ثانية'),
           onPressed: () async {
-            final now = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
-            await NotificationService().flutterLocalNotificationsPlugin.zonedSchedule(
-              9999,
-              'تنبيه اختبار',
-              'يفترض أن يظهر بعد ٣٠ ثانية',
-              now,
-              const NotificationDetails(
-                android: AndroidNotificationDetails(
-                  'medicine_channel_id',
-                  'Medicine Reminders',
-                  importance: Importance.max,
-                  priority: Priority.high,
+            try {
+              final notificationService = NotificationService().flutterLocalNotificationsPlugin;
+              
+              // 1. Schedule the notification
+              final tz.TZDateTime scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
+              await notificationService.zonedSchedule(
+                9999, // A unique ID for the test notification
+                'تنبيه اختبار',
+                'إذا رأيت هذا، فالإشعارات تعمل!',
+                scheduledTime,
+                const NotificationDetails(
+                  android: AndroidNotificationDetails(
+                    'medicine_channel_id',
+                    'Medicine Reminders',
+                    importance: Importance.max,
+                    priority: Priority.high,
+                  ),
                 ),
-              ),
-              uiLocalNotificationDateInterpretation:
-                  UILocalNotificationDateInterpretation.absoluteTime,
-              androidAllowWhileIdle: true,
-            );
-            // Show a confirmation message to the user
-            if (mounted) {
+                uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+                androidAllowWhileIdle: true,
+              );
+
+              if (!mounted) return;
+              // 2. Show initial confirmation
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('تم جدولة إشعار اختباري. سيظهر خلال 30 ثانية.'),
-                  backgroundColor: Colors.green,
+                  content: Text('تم إرسال طلب جدولة الإشعار... جار التحقق.'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+
+              // Add a small delay to give the system time to register the request
+              await Future.delayed(const Duration(seconds: 1));
+              if (!mounted) return;
+
+              // 3. Verify if the notification is pending
+              final List<PendingNotificationRequest> pendingRequests = await notificationService.pendingNotificationRequests();
+              final int count = pendingRequests.length;
+              final String pendingIds = pendingRequests.map((r) => r.id).join(', ');
+              
+              // 4. Show verification result
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('التحقق: $count إشعارات في قائمة الانتظار. (IDs: $pendingIds)'),
+                  backgroundColor: count > 0 ? Colors.green : Colors.orange,
+                  duration: const Duration(seconds: 8),
+                ),
+              );
+
+            } catch (e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('حدث خطأ أثناء الجدولة: $e'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 8),
                 ),
               );
             }
