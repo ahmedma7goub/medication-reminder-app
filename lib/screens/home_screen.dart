@@ -127,17 +127,42 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-Widget _buildActionButtons(BuildContext context) {
-  return Column(
-    children: [
-      ElevatedButton(
-        child: const Text('اختبار 30 ثانية'),
-        onPressed: () async { … },
-      ),
-      const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
+  Widget _buildActionButtons(BuildContext context) {
+    return Column(
+      children: [
+        ElevatedButton(
+          child: const Text('اختبار 30 ثانية'),
+          onPressed: () async {
+            final now = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
+            await NotificationService().flutterLocalNotificationsPlugin.zonedSchedule(
+              9999,
+              'تنبيه اختبار',
+              'يفترض أن يظهر بعد ٣٠ ثانية',
+              now,
+              const NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'medicine_channel_id',
+                  'Medicine Reminders',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                ),
+              ),
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.absoluteTime,
+              androidAllowWhileIdle: true,
+            );
+            debugPrint('🔔 تم جدولة الاختبار لـ $now');
+          },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: const Text('التقويم'),
+                onPressed: () {},
+              ),
             child: ElevatedButton.icon(
               icon: const Icon(Icons.calendar_today),
               label: const Text('التقويم'),
