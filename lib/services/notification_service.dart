@@ -4,6 +4,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:medication_reminder/helpers/database_helper.dart';
 import 'package:medication_reminder/models/dose_history.dart';
 
@@ -19,7 +20,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   // Define a high-importance channel for Android
-  static const AndroidNotificationChannel channel = AndroidNotificationChannel(
+  static final AndroidNotificationChannel channel = AndroidNotificationChannel(
     'medicine_channel_id', // id must match when scheduling
     'Medicine Reminders', // title
     description: 'Channel for critical medicine reminder notifications.',
@@ -28,9 +29,7 @@ class NotificationService {
     enableVibration: true,
     enableLights: true,
     ledColor: Colors.cyan,
-    ledOnMs: 1000,
-    ledOffMs: 500,
-    vibrationPattern: Int64List.fromList([0, 1000, 500, 2000]), // Vibrate for 1s, pause 0.5s, vibrate 2s
+    vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]), // Vibrate pattern
     bypassDnd: true, // Allow to bypass 'Do Not Disturb' mode
   );
 
