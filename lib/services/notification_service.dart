@@ -110,6 +110,7 @@ class NotificationService {
                 channelDescription: 'Channel for medicine reminder notifications',
                 importance: Importance.max,
                 priority: Priority.high,
+                foregroundService: true, // Ensure snoozed notifications are high priority
               ),
             ),
             uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
@@ -146,6 +147,7 @@ class NotificationService {
           importance: Importance.max,
           priority: Priority.high,
           playSound: true,
+          foregroundService: true, // This is the critical change
           actions: const [
             AndroidNotificationAction('TAKEN', 'تم تناولها', showsUserInterface: true, cancelNotification: true),
             AndroidNotificationAction('SNOOZE', 'غفوة 10 دقائق', showsUserInterface: true),

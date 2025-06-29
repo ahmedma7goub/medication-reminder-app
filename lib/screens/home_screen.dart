@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:medication_reminder/services/notification_service.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -19,11 +20,70 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Medicine> _todaysMedicines = [];
   Map<int, int> _takenDosesCount = {};
   bool _isLoading = true;
+  Timer? _timer;
+  DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _refreshData();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _now = DateTime.now();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  // Helper to calculate the next dose time for a medicine
+  DateTime? _getNextDoseTime(Medicine medicine) {
+    final now = _now;
+    List<DateTime> todayDoseTimes = [];
+
+    for (String timeStr in medicine.times) {
+      try {
+        final parts = timeStr.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        todayDoseTimes.add(DateTime(now.year, now.month, now.day, hour, minute));
+      } catch (e) {
+        // Ignore invalid time formats
+      }
+    }
+
+    // Find the first dose time today that is after the current time
+    final upcomingToday = todayDoseTimes.where((dt) => dt.isAfter(now)).toList();
+    upcomingToday.sort();
+
+    if (upcomingToday.isNotEmpty) {
+      return upcomingToday.first;
+    }
+
+    // If no upcoming doses today, find the first dose of tomorrow
+    if (todayDoseTimes.isNotEmpty) {
+      todayDoseTimes.sort();
+      final firstDoseTomorrow = todayDoseTimes.first.add(const Duration(days: 1));
+      return firstDoseTomorrow;
+    }
+
+    return null; // No scheduled times for this medicine
+  }
+
+  // Helper to format a duration into a readable HH:MM:SS string
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+
+    return "$hours:$minutes:$seconds";
   }
 
   Future<void> _refreshData() async {
@@ -104,6 +164,17 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text('مرحباً أحمد', style: TextStyle(color: onPrimaryColor, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
+            Text(
+              intl.DateFormat('HH:mm:ss', 'ar').format(_now),
+              style: TextStyle(
+                fontFamily: 'Courier', // Use a monospaced font for the clock
+                color: onPrimaryColor,
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+              ),
+              textDirection: TextDirection.ltr,
+            ),
+            const SizedBox(height: 16),
             Text('اليوم لديك $_totalDosesToday أدوية', style: TextStyle(color: onPrimaryColor.withOpacity(0.9), fontSize: 16)),
             const SizedBox(height: 20),
             Row(
@@ -249,6 +320,15 @@ class _HomeScreenState extends State<HomeScreen> {
               final medicine = _todaysMedicines[index];
               final takenCount = _takenDosesCount[medicine.id!] ?? 0;
 
+              final nextDoseTime = _getNextDoseTime(medicine);
+              String countdownText = '';
+              if (nextDoseTime != null) {
+                final remaining = nextDoseTime.difference(_now);
+                if (!remaining.isNegative) {
+                  countdownText = 'الجرعة التالية بعد: ${_formatDuration(remaining)}';
+                }
+              }
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
@@ -259,6 +339,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(medicine.name, style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 4),
                       Text('${medicine.dosage} - ${medicine.type}', style: Theme.of(context).textTheme.bodyMedium),
+                      if (countdownText.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          countdownText,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Courier',
+                          ),
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       const Divider(),
                       const SizedBox(height: 12),
