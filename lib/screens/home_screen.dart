@@ -4,6 +4,9 @@ import 'package:medication_reminder/models/dose_history.dart';
 import 'package:medication_reminder/models/medicine.dart';
 import 'package:medication_reminder/screens/add_edit_medicine_screen.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:medication_reminder/services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -124,39 +127,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  ElevatedButton(
-  child: const Text('اختبار 30 ثانية'),
-  onPressed: () async {
-    final now = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
-    await NotificationService().flutterLocalNotificationsPlugin.zonedSchedule(
-      9999,                                // unique test ID
-      'تنبيه اختبار',
-      'يفترض أن يظهر بعد ٣٠ ثانية',
-      now,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'medicine_channel_id',
-          'Medicine Reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidAllowWhileIdle: true,
-    );
-    debugPrint('🔔 تم جدولة الاختبار لـ $now');
-  },
-),
-
   Widget _buildActionButtons(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.calendar_today),
-            label: const Text('التقويم'),
-            onPressed: () { /* Navigate to Calendar Screen */ },
+        ElevatedButton(
+          child: const Text('اختبار 30 ثانية'),
+          onPressed: () async {
+            final now = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
+            await NotificationService().flutterLocalNotificationsPlugin.zonedSchedule(
+              9999,
+              'تنبيه اختبار',
+              'يفترض أن يظهر بعد ٣٠ ثانية',
+              now,
+              const NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'medicine_channel_id',
+                  'Medicine Reminders',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                ),
+              ),
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.absoluteTime,
+              androidAllowWhileIdle: true,
+            );
+            debugPrint('🔔 تم جدولة الاختبار لـ $now');
+          },
           ),
         ),
         const SizedBox(width: 16),
