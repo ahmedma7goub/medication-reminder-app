@@ -29,8 +29,7 @@ class NotificationService {
     enableVibration: true,
     enableLights: true,
     ledColor: Colors.cyan,
-    vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]), // Vibrate pattern
-    bypassDnd: true, // Allow to bypass 'Do Not Disturb' mode
+    vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]) // Vibrate pattern
   );
 
   Future<void> init() async {
