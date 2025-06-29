@@ -127,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Build action buttons including test notification
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
@@ -163,25 +164,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: const Text('التقويم'),
                 onPressed: () {},
               ),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('التقويم'),
-              onPressed: () {},
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('إضافة دواء'),
-              onPressed: () async { … },
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('إضافة دواء'),
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const AddEditMedicineScreen()),
+                  );
+                  _refreshData();
+                },
+              ),
             ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildTodaysMedicinesList(BuildContext context) {
     final String today = intl.DateFormat('EEEE, d MMMM', 'ar').format(DateTime.now());
 
