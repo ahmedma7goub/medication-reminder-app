@@ -78,15 +78,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _checkPermissions() async {
+    // Determine Android SDK version
     int sdkInt = 0;
     if (Platform.isAndroid) {
       final match = RegExp(r'SDK (\d+)').firstMatch(Platform.operatingSystemVersion);
-      if (match != null) sdkInt = int.parse(match.group(1)!);
+      if (match != null) {
+        sdkInt = int.parse(match.group(1)!);
+      }
     }
 
-    final List<Permission> permissionsToRequest = [];
-
-    // Notification permission only needed on Android 13+ (SDK 33)
+    // Collect permissions we need to request
+    final List<Permission> toRequest = [];
     if (sdkInt >= 33) {
       final status = await Permission.notification.status;
       if (status.isDenied) permissionsToRequest.add(Permission.notification);
@@ -130,7 +132,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-        await showDialog(
             context: context,
             builder: (context) => AlertDialog(
                 title: const Text("الإذن مطلوب"),
