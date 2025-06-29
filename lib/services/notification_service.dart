@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'dart:convert';
 import 'package:medication_reminder/helpers/database_helper.dart';
@@ -28,8 +29,14 @@ class NotificationService {
   );
 
   Future<void> init() async {
-    // Initialize timezone database
+    // Initialize timezone database and set local
     tz.initializeTimeZones();
+    try {
+      final String currentTimeZone = await FlutterNativeTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(currentTimeZone));
+    } catch (_) {
+      // fallback: keep default
+    }
 
     // Android initialization
     const AndroidInitializationSettings initializationSettingsAndroid =
