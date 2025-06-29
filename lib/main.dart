@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:medication_reminder/helpers/database_helper.dart'; 
 import 'package:provider/provider.dart'; 
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:medication_reminder/providers/theme_provider.dart';
@@ -77,10 +78,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _checkPermissions() async {
-    final notificationStatus = await Permission.notification.status;
-    final alarmStatus = await Permission.scheduleExactAlarm.status;
+    int sdkInt = 0;
+    if (Platform.isAndroid) {
+      final match = RegExp(r'SDK (\d+)').firstMatch(Platform.operatingSystemVersion);
+      if (match != null) sdkInt = int.parse(match.group(1)!);
+    }
 
-    if (notificationStatus.isDenied || alarmStatus.isDenied) {
+    final List<Permission> permissionsToRequest = [];
+
+    // Notification permission only needed on Android 13+ (SDK 33)
+    if (sdkInt >= 33) {
+      final status = await Permission.notification.status;
+      if (status.isDenied) permissionsToRequest.add(Permission.notification);
+    }
+
+    if (sdkInt >= 31) {
+      final status = await Permission.scheduleExactAlarm.status;
+      if (status.isDenied) permissionsToRequest.add(Permission.scheduleExactAlarm);
+    }
+
+    if (permissionsToRequest.isNotEmpty)
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -94,7 +111,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: const Text('طلب الإذن'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await [Permission.notification, Permission.scheduleExactAlarm].request();
+                await permissionsToRequest.request();
               },
             ),
             TextButton(
@@ -107,7 +124,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
       );
-    } else if (notificationStatus.isPermanentlyDenied || alarmStatus.isPermanentlyDenied) {
+        } else {
+      // All required permissions already granted
+      return;
+    }
+  }
+
         await showDialog(
             context: context,
             builder: (context) => AlertDialog(
