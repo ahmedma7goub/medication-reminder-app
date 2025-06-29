@@ -22,10 +22,16 @@ class NotificationService {
   static const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'medicine_channel_id', // id must match when scheduling
     'Medicine Reminders', // title
-    description: 'Channel for medicine reminder notifications',
+    description: 'Channel for critical medicine reminder notifications.',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
+    enableLights: true,
+    ledColor: Colors.cyan,
+    ledOnMs: 1000,
+    ledOffMs: 500,
+    vibrationPattern: Int64List.fromList([0, 1000, 500, 2000]), // Vibrate for 1s, pause 0.5s, vibrate 2s
+    bypassDnd: true, // Allow to bypass 'Do Not Disturb' mode
   );
 
   Future<void> init() async {

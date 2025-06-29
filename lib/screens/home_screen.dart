@@ -152,7 +152,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   UILocalNotificationDateInterpretation.absoluteTime,
               androidAllowWhileIdle: true,
             );
-            debugPrint('🔔 تم جدولة الاختبار لـ $now');
+            // Show a confirmation message to the user
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم جدولة إشعار اختباري. سيظهر خلال 30 ثانية.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
           },
         ),
         const SizedBox(height: 12),

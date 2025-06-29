@@ -77,46 +77,64 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _checkPermissions() async {
-    final notificationStatus = await Permission.notification.status;
-    final alarmStatus = await Permission.scheduleExactAlarm.status;
+    // Use a short delay to ensure the UI is ready before showing dialogs
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    if (notificationStatus.isDenied || alarmStatus.isDenied) {
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('إذن مهم مطلوب'),
-          content: const Text(
-            'يحتاج التطبيق إلى إذن الإشعارات والإنذارات ليرسل لك تذكيرات الأدوية في الوقت المناسب. يرجى تمكين هذه الأذونات.',
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('طلب الإذن'),
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await [Permission.notification, Permission.scheduleExactAlarm].request();
-              },
-            ),
-            TextButton(
-              child: const Text('فتح الإعدادات'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                openAppSettings();
-              },
-            ),
-          ],
-        ),
+    // 1. Check Notification Permission (Android 13+)
+    if (await Permission.notification.isDenied) {
+      await _showPermissionDialog(
+        'إذن الإشعارات',
+        'نحتاج إذن الإشعارات لنتمكن من إرسال تذكيرات الأدوية لك.',
+        Permission.notification,
       );
-    } else if (notificationStatus.isPermanentlyDenied || alarmStatus.isPermanentlyDenied) {
-        await showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-                title: const Text("الإذن مطلوب"),
-                content: const Text("لقد رفضت الإذن بشكل دائم. يرجى الانتقال إلى إعدادات التطبيق لتمكينه."),
-                actions: [TextButton(onPressed: (){ Navigator.of(context).pop(); openAppSettings();}, child: const Text("فتح الإعدادات"))],
-            ),
-        );
     }
+
+    // 2. Check Exact Alarm Permission (Android 12+)
+    if (await Permission.scheduleExactAlarm.isDenied) {
+      await _showPermissionDialog(
+        'إذن التنبيهات الدقيقة',
+        'نحتاج هذا الإذن لضمان وصول تذكيراتك في الوقت المحدد بالضبط، حتى لو كان التطبيق مغلقًا.',
+        Permission.scheduleExactAlarm,
+      );
+    }
+
+    // 3. Check Battery Optimization Permission
+    if (!await Permission.ignoreBatteryOptimizations.isGranted) {
+      await _showPermissionDialog(
+        'تجاوز تحسينات البطارية',
+        'لضمان عدم تأخير أو منع التذكيرات بسبب وضع توفير الطاقة في جهازك، يرجى السماح للتطبيق بالعمل في الخلفية.',
+        Permission.ignoreBatteryOptimizations,
+      );
+    }
+  }
+
+  Future<void> _showPermissionDialog(String title, String content, Permission permission) async {
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('لاحقاً'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: const Text('منح الإذن'),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final status = await permission.request();
+              if (status.isPermanentlyDenied) {
+                await openAppSettings();
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _onItemTapped(int index) {
