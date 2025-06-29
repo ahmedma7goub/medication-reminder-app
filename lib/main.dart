@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:medication_reminder/helpers/database_helper.dart'; 
 import 'package:provider/provider.dart'; 
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:medication_reminder/providers/theme_provider.dart';
@@ -78,55 +77,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _checkPermissions() async {
-    if (!Platform.isAndroid) return;
-    }
+    final notificationStatus = await Permission.notification.status;
+    final alarmStatus = await Permission.scheduleExactAlarm.status;
 
-    if (sdkInt >= 33) {
-      final status = await Permission.notification.status;
-      if (status.isDenied) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('إذن مهم مطلوب'),
-            content: const Text(
-              'يحتاج التطبيق إلى إذن الإشعارات والإنذارات ليرسل لك تذكيرات الأدوية في الوقت المناسب. يرجى تمكين هذه الأذونات.',
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('طلب الإذن'),
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await Permission.notification.request();
-                },
-              ),
-              TextButton(
-                child: const Text('فتح الإعدادات'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  openAppSettings();
-                },
-              ),
-            ],
-          ),
-        );
-      }
-    }
-
-    if (sdkInt >= 31) {
-      final status = await Permission.scheduleExactAlarm.status;
-      if (status.isDenied) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('إذن مهم مطلوب'),
-            content: const Text(
-              'يحتاج التطبيق إلى إذن الإشعارات والإنذارات ليرسل لك تذكيرات الأدوية في الوقت المناسب. يرجى تمكين هذه الأذونات.',
-      if (status.isDenied) permissionsToRequest.add(Permission.scheduleExactAlarm);
-    }
-
-    if (permissionsToRequest.isNotEmpty)
+    if (notificationStatus.isDenied || alarmStatus.isDenied) {
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -140,7 +94,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: const Text('طلب الإذن'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await permissionsToRequest.request();
+                await [Permission.notification, Permission.scheduleExactAlarm].request();
               },
             ),
             TextButton(
@@ -153,12 +107,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
       );
-        } else {
-      // All required permissions already granted
-      return;
-    }
-  }
-
+    } else if (notificationStatus.isPermanentlyDenied || alarmStatus.isPermanentlyDenied) {
+        await showDialog(
             context: context,
             builder: (context) => AlertDialog(
                 title: const Text("الإذن مطلوب"),
