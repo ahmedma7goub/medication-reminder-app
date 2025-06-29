@@ -78,24 +78,51 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _checkPermissions() async {
-    // Determine Android SDK version
-    int sdkInt = 0;
-    if (Platform.isAndroid) {
-      final match = RegExp(r'SDK (\d+)').firstMatch(Platform.operatingSystemVersion);
-      if (match != null) {
-        sdkInt = int.parse(match.group(1)!);
-      }
+    if (!Platform.isAndroid) return;
     }
 
-    // Collect permissions we need to request
-    final List<Permission> toRequest = [];
     if (sdkInt >= 33) {
       final status = await Permission.notification.status;
-      if (status.isDenied) permissionsToRequest.add(Permission.notification);
+      if (status.isDenied) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('إذن مهم مطلوب'),
+            content: const Text(
+              'يحتاج التطبيق إلى إذن الإشعارات والإنذارات ليرسل لك تذكيرات الأدوية في الوقت المناسب. يرجى تمكين هذه الأذونات.',
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('طلب الإذن'),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Permission.notification.request();
+                },
+              ),
+              TextButton(
+                child: const Text('فتح الإعدادات'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  openAppSettings();
+                },
+              ),
+            ],
+          ),
+        );
+      }
     }
 
     if (sdkInt >= 31) {
       final status = await Permission.scheduleExactAlarm.status;
+      if (status.isDenied) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('إذن مهم مطلوب'),
+            content: const Text(
+              'يحتاج التطبيق إلى إذن الإشعارات والإنذارات ليرسل لك تذكيرات الأدوية في الوقت المناسب. يرجى تمكين هذه الأذونات.',
       if (status.isDenied) permissionsToRequest.add(Permission.scheduleExactAlarm);
     }
 
