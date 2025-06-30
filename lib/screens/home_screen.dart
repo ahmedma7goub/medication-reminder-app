@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:medication_reminder/services/notification_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +23,24 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   Timer? _timer;
   DateTime _now = DateTime.now();
+  
+  // Helper method to convert permission status to readable text
+  String _getPermissionStatusText(PermissionStatus status) {
+    switch (status) {
+      case PermissionStatus.granted:
+        return 'ممنوح ✅';
+      case PermissionStatus.denied:
+        return 'مرفوض ❌';
+      case PermissionStatus.permanentlyDenied:
+        return 'مرفوض دائمًا ❌';
+      case PermissionStatus.restricted:
+        return 'مقيد ⚠️';
+      case PermissionStatus.limited:
+        return 'محدود ⚠️';
+      default:
+        return 'غير معروف ❓';
+    }
+  }
 
   @override
   void initState() {
@@ -206,9 +225,48 @@ class _HomeScreenState extends State<HomeScreen> {
           child: const Text('اختبار 30 ثانية'),
           onPressed: () async {
             try {
-              final notificationService = NotificationService().flutterLocalNotificationsPlugin;
+              // First check all required permissions
+              final notificationPermission = await Permission.notification.status;
+              final exactAlarmPermission = await Permission.scheduleExactAlarm.status;
+              final batteryOptPermission = await Permission.ignoreBatteryOptimizations.status;
               
-              // 1. Schedule the notification
+              // Show permission status
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'حالة الأذونات:\n'
+                    '- الإشعارات: ${_getPermissionStatusText(notificationPermission)}\n'
+                    '- التنبيهات الدقيقة: ${_getPermissionStatusText(exactAlarmPermission)}\n'
+                    '- تجاوز تحسينات البطارية: ${_getPermissionStatusText(batteryOptPermission)}'
+                  ),
+                  backgroundColor: Colors.blue,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+              
+              // If any critical permission is denied, show warning
+              if (notificationPermission.isDenied || exactAlarmPermission.isDenied) {
+                await Future.delayed(const Duration(seconds: 5));
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'تحذير: بعض الأذونات المطلوبة غير ممنوحة. قد لا تعمل الإشعارات بشكل صحيح.'
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 5),
+                    action: SnackBarAction(
+                      label: 'الإعدادات',
+                      onPressed: () => openAppSettings(),
+                    ),
+                  ),
+                );
+                await Future.delayed(const Duration(seconds: 5));
+              }
+              
+              // Schedule the test notification
+              final notificationService = NotificationService().flutterLocalNotificationsPlugin;
               final tz.TZDateTime scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 30));
               await notificationService.zonedSchedule(
                 9999, // A unique ID for the test notification
@@ -223,12 +281,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     priority: Priority.high,
                   ),
                 ),
+                androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
                 uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-                androidAllowWhileIdle: true,
               );
 
               if (!mounted) return;
-              // 2. Show initial confirmation
+              // Show scheduling confirmation
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('تم إرسال طلب جدولة الإشعار... جار التحقق.'),
@@ -237,20 +295,25 @@ class _HomeScreenState extends State<HomeScreen> {
               );
 
               // Add a small delay to give the system time to register the request
-              await Future.delayed(const Duration(seconds: 1));
+              await Future.delayed(const Duration(seconds: 2));
               if (!mounted) return;
 
-              // 3. Verify if the notification is pending
+              // Verify if the notification is pending
               final List<PendingNotificationRequest> pendingRequests = await notificationService.pendingNotificationRequests();
               final int count = pendingRequests.length;
+              final bool testNotificationFound = pendingRequests.any((req) => req.id == 9999);
               final String pendingIds = pendingRequests.map((r) => r.id).join(', ');
               
-              // 4. Show verification result
+              // Show verification result
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('التحقق: $count إشعارات في قائمة الانتظار. (IDs: $pendingIds)'),
-                  backgroundColor: count > 0 ? Colors.green : Colors.orange,
-                  duration: const Duration(seconds: 8),
+                  content: Text(
+                    'التحقق: ${testNotificationFound ? "تم جدولة الإشعار بنجاح!" : "لم يتم العثور على إشعار الاختبار!"}\n'
+                    'عدد الإشعارات المجدولة: $count\n'
+                    'المعرفات: $pendingIds'
+                  ),
+                  backgroundColor: testNotificationFound ? Colors.green : Colors.orange,
+                  duration: const Duration(seconds: 10),
                 ),
               );
 
@@ -260,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SnackBar(
                   content: Text('حدث خطأ أثناء الجدولة: $e'),
                   backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 8),
+                  duration: const Duration(seconds: 10),
                 ),
               );
             }

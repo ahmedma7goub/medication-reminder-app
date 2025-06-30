@@ -38,8 +38,17 @@ class NotificationService {
     try {
       final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(currentTimeZone));
-    } catch (_) {
-      // fallback: keep default
+      debugPrint('Timezone initialized successfully: $currentTimeZone');
+    } catch (e) {
+      // Log the error for debugging
+      debugPrint('Error initializing timezone: $e');
+      // fallback: use UTC
+      try {
+        tz.setLocalLocation(tz.getLocation('UTC'));
+        debugPrint('Fallback to UTC timezone');
+      } catch (e2) {
+        debugPrint('Critical error setting timezone: $e2');
+      }
     }
 
     // Android initialization

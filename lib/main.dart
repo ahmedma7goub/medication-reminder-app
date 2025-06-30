@@ -80,8 +80,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     // Use a short delay to ensure the UI is ready before showing dialogs
     await Future.delayed(const Duration(milliseconds: 500));
 
+    // Create a list to track missing permissions
+    final List<String> missingPermissions = [];
+
     // 1. Check Notification Permission (Android 13+)
-    if (await Permission.notification.isDenied) {
+    final notificationStatus = await Permission.notification.status;
+    if (notificationStatus.isDenied || notificationStatus.isPermanentlyDenied) {
+      missingPermissions.add('الإشعارات');
       await _showPermissionDialog(
         'إذن الإشعارات',
         'نحتاج إذن الإشعارات لنتمكن من إرسال تذكيرات الأدوية لك.',
@@ -90,7 +95,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     // 2. Check Exact Alarm Permission (Android 12+)
-    if (await Permission.scheduleExactAlarm.isDenied) {
+    final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
+    if (exactAlarmStatus.isDenied || exactAlarmStatus.isPermanentlyDenied) {
+      missingPermissions.add('التنبيهات الدقيقة');
       await _showPermissionDialog(
         'إذن التنبيهات الدقيقة',
         'نحتاج هذا الإذن لضمان وصول تذكيراتك في الوقت المحدد بالضبط، حتى لو كان التطبيق مغلقًا.',
@@ -99,11 +106,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     // 3. Check Battery Optimization Permission
-    if (!await Permission.ignoreBatteryOptimizations.isGranted) {
+    final batteryOptStatus = await Permission.ignoreBatteryOptimizations.status;
+    if (!batteryOptStatus.isGranted) {
+      missingPermissions.add('تجاوز تحسينات البطارية');
       await _showPermissionDialog(
         'تجاوز تحسينات البطارية',
         'لضمان عدم تأخير أو منع التذكيرات بسبب وضع توفير الطاقة في جهازك، يرجى السماح للتطبيق بالعمل في الخلفية.',
         Permission.ignoreBatteryOptimizations,
+      );
+    }
+
+    // Show a summary of permission status if any are missing
+    if (missingPermissions.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تنبيه: بعض الأذونات غير ممنوحة: ${missingPermissions.join(', ')}. '
+            'قد لا تعمل التذكيرات بشكل صحيح.',
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: 'الإعدادات',
+            onPressed: () => openAppSettings(),
+          ),
+        ),
       );
     }
   }
